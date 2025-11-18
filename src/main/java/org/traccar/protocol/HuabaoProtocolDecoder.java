@@ -717,6 +717,7 @@ public class HuabaoProtocolDecoder extends BaseProtocolDecoder {
                     break;
                 case 0xD4:
                 case 0xE1:
+                case 0xE9:
                     if (length == 1) {
                         position.set(Position.KEY_BATTERY_LEVEL, buf.readUnsignedByte());
                     } else {
@@ -774,6 +775,9 @@ public class HuabaoProtocolDecoder extends BaseProtocolDecoder {
                         }
                     }
                     break;
+                case 0xE8:
+                    position.set("lockStatus", buf.readUnsignedMedium());
+                    break;
                 case 0xEA:
                     if (length > 2) {
                         buf.readUnsignedByte(); // extended info type
@@ -809,7 +813,7 @@ public class HuabaoProtocolDecoder extends BaseProtocolDecoder {
                     }
                     break;
                 case 0xEB:
-                    if (buf.getUnsignedShort(buf.readerIndex()) > 200) {
+                    if (buf.getUnsignedShort(buf.readerIndex()) > 200 && (length - 3) % 5 == 0) {
                         int mcc = buf.readUnsignedShort();
                         int mnc = buf.readUnsignedByte();
                         while (buf.readerIndex() < endIndex) {
@@ -817,6 +821,8 @@ public class HuabaoProtocolDecoder extends BaseProtocolDecoder {
                                     mcc, mnc, buf.readUnsignedShort(), buf.readUnsignedShort(),
                                     buf.readUnsignedByte()));
                         }
+                    } else if (BufferUtil.isPrintable(buf, length)) {
+                        position.set("timezone", buf.readString(length, StandardCharsets.UTF_8));
                     } else {
                         while (buf.readerIndex() < endIndex) {
                             int extendedLength = buf.readUnsignedShort();
